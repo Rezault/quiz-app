@@ -20,8 +20,21 @@ let oneQueue = [];
 let oneIndex = 0;
 let oneCorrect = 0;
 
+// Blind mode state — tracks where each word was placed
+let blindPlacements = []; // { value, type, expectedIndex, placedKey }
+
 function isOneMode() {
   return mode.startsWith("one-");
+}
+
+function isBlindMode() {
+  return mode.startsWith("blind-");
+}
+
+function getCategory() {
+  if (isOneMode()) return mode.replace("one-", "");
+  if (isBlindMode()) return mode.replace("blind-", "");
+  return mode;
 }
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
@@ -30,7 +43,7 @@ function buildPathway() {
   const el = document.getElementById("pathway");
   el.innerHTML = "";
 
-  if (isOneMode()) {
+  if (isOneMode() || isBlindMode()) {
     setupOneAtATimeDropZones();
     return;
   }
@@ -72,7 +85,7 @@ function buildWordBank() {
   const el = document.getElementById("wordBank");
   el.innerHTML = "<h3>Word Bank</h3>";
 
-  if (isOneMode()) {
+  if (isOneMode() || isBlindMode()) {
     buildOneAtATimeBank();
     return;
   }
@@ -94,19 +107,19 @@ function buildWordBank() {
   setupDraggables();
 }
 
-// --- One at a Time mode ---
+// --- One at a Time / Blind mode ---
 
 function initOneAtATime() {
   const allItems = [];
-  const oneCategory = mode.replace("one-", ""); // "both", "substrates", or "enzymes"
+  const category = getCategory();
 
-  if (oneCategory !== "enzymes") {
+  if (category !== "enzymes") {
     steps.forEach((step, i) => {
       allItems.push({ value: step.substrate, type: "substrate", index: i });
     });
     allItems.push({ value: finalProduct, type: "substrate", index: 10 });
   }
-  if (oneCategory !== "substrates") {
+  if (category !== "substrates") {
     steps.forEach((step, i) => {
       allItems.push({ value: step.enzyme, type: "enzyme", index: i });
     });
@@ -115,6 +128,7 @@ function initOneAtATime() {
   oneQueue = shuffle(allItems);
   oneIndex = 0;
   oneCorrect = 0;
+  blindPlacements = [];
   updateOneScore();
 }
 
@@ -123,7 +137,11 @@ function buildOneAtATimeBank() {
   el.innerHTML = "<h3>Word Bank</h3>";
 
   if (oneIndex >= oneQueue.length) {
-    el.innerHTML += `<div class="bank-section"><p style="color:#4caf50;font-size:0.85em;text-align:center;">🎉 All done! ${oneCorrect}/${oneQueue.length} correct</p></div>`;
+    if (isBlindMode()) {
+      el.innerHTML += `<div class="bank-section"><p style="color:#f5c518;font-size:0.85em;text-align:center;">All placed! Click <strong>Check Answers</strong> to see your results.</p></div>`;
+    } else {
+      el.innerHTML += `<div class="bank-section"><p style="color:#4caf50;font-size:0.85em;text-align:center;">🎉 All done! ${oneCorrect}/${oneQueue.length} correct</p></div>`;
+    }
     return;
   }
 
@@ -142,10 +160,10 @@ function buildOneAtATimeBank() {
 function setupOneAtATimeDropZones() {
   const el = document.getElementById("pathway");
   el.innerHTML = "";
-  const oneCategory = mode.replace("one-", "");
+  const category = getCategory();
 
   steps.forEach((step, i) => {
-    if (oneCategory !== "enzymes") {
+    if (category !== "enzymes") {
       const row = document.createElement("div");
       row.className = "step";
       row.innerHTML = `<span class="step-num">${i+1})</span><div class="drop-zone substrate" data-type="substrate" data-index="${i}"></div>`;
@@ -157,7 +175,7 @@ function setupOneAtATimeDropZones() {
       el.appendChild(row);
     }
     el.innerHTML += `<div class="arrow">↓</div>`;
-    if (oneCategory !== "substrates") {
+    if (category !== "substrates") {
       const erow = document.createElement("div");
       erow.className = "enzyme-label";
       erow.innerHTML = `<div class="drop-zone enzyme" data-type="enzyme" data-index="${i}"></div>`;
@@ -167,7 +185,7 @@ function setupOneAtATimeDropZones() {
     }
   });
 
-  if (oneCategory !== "enzymes") {
+  if (category !== "enzymes") {
     const row = document.createElement("div");
     row.className = "step";
     row.innerHTML = `<span class="step-num"></span><div class="drop-zone substrate" data-type="final" data-index="10"></div>`;
@@ -187,7 +205,8 @@ function setupOneAtATimeDropZones() {
     }
     if (zone) {
       zone.textContent = placed[key];
-      zone.classList.add("filled", "correct");
+      zone.classList.add("filled");
+      if (isOneMode()) zone.classList.add("correct");
     }
   });
 
@@ -204,7 +223,9 @@ function setupOneAtATimeDropZones() {
       const current = oneQueue[oneIndex];
       const key = `${zone.dataset.type}-${zone.dataset.index}`;
 
-      // Check if this is the correct zone for the current word
+      // Check if zone is already filled
+      if (placed[key]) return;
+
       let expectedKey;
       if (current.type === "substrate" && current.index === 10) {
         expectedKey = "final-10";
@@ -212,18 +233,30 @@ function setupOneAtATimeDropZones() {
         expectedKey = `${current.type}-${current.index}`;
       }
 
-      if (key === expectedKey) {
+      if (isBlindMode()) {
+        // Blind mode: accept any empty zone, no feedback
         placed[key] = val;
         zone.textContent = val;
-        zone.classList.add("filled", "correct");
-        oneCorrect++;
+        zone.classList.add("filled");
+        blindPlacements.push({ value: val, type: current.type, expectedIndex: current.index, placedKey: key });
         oneIndex++;
         updateOneScore();
         buildOneAtATimeBank();
       } else {
-        zone.classList.add("incorrect");
-        setTimeout(() => zone.classList.remove("incorrect"), 600);
-        updateOneScore("❌ Wrong spot! Try again.");
+        // Instant feedback mode
+        if (key === expectedKey) {
+          placed[key] = val;
+          zone.textContent = val;
+          zone.classList.add("filled", "correct");
+          oneCorrect++;
+          oneIndex++;
+          updateOneScore();
+          buildOneAtATimeBank();
+        } else {
+          zone.classList.add("incorrect");
+          setTimeout(() => zone.classList.remove("incorrect"), 600);
+          updateOneScore("❌ Wrong spot! Try again.");
+        }
       }
     });
   });
@@ -233,6 +266,12 @@ function updateOneScore(msg) {
   const scoreEl = document.getElementById("score");
   if (msg) {
     scoreEl.textContent = msg;
+  } else if (isBlindMode()) {
+    if (oneIndex >= oneQueue.length) {
+      scoreEl.textContent = `All ${oneQueue.length} placed — click Check Answers!`;
+    } else {
+      scoreEl.textContent = `Placed ${oneIndex} of ${oneQueue.length} — drop each where you think it goes`;
+    }
   } else if (oneIndex >= oneQueue.length) {
     scoreEl.textContent = `🎉 Done! ${oneCorrect}/${oneQueue.length} correct`;
   } else {
@@ -299,6 +338,29 @@ function setupDropZones() {
 
 function checkAnswers() {
   if (isOneMode()) return;
+
+  if (isBlindMode()) {
+    // Check all blind placements
+    let correct = 0;
+    blindPlacements.forEach(p => {
+      let expectedKey;
+      if (p.type === "substrate" && p.expectedIndex === 10) {
+        expectedKey = "final-10";
+      } else {
+        expectedKey = `${p.type}-${p.expectedIndex}`;
+      }
+      const zone = document.querySelector(`.drop-zone[data-type="${p.placedKey.split('-')[0]}"][data-index="${p.placedKey.split('-')[1]}"]`);
+      if (p.placedKey === expectedKey) {
+        correct++;
+        if (zone) { zone.classList.add("correct"); zone.classList.remove("incorrect"); }
+      } else {
+        if (zone) { zone.classList.add("incorrect"); zone.classList.remove("correct"); }
+      }
+    });
+    document.getElementById("score").textContent = `✅ ${correct} / ${blindPlacements.length} correct`;
+    return;
+  }
+
   let correct = 0, total = 0;
   document.querySelectorAll(".drop-zone").forEach(zone => {
     const type = zone.dataset.type;
@@ -320,9 +382,10 @@ function checkAnswers() {
 
 function resetQuiz() {
   placed = {};
+  blindPlacements = [];
   document.querySelectorAll(".word").forEach(w => w.classList.remove("placed"));
   document.getElementById("score").textContent = "Drop terms into the boxes below";
-  if (isOneMode()) {
+  if (isOneMode() || isBlindMode()) {
     initOneAtATime();
     setupOneAtATimeDropZones();
     buildOneAtATimeBank();
@@ -338,7 +401,8 @@ document.querySelectorAll(".mode-toggle button").forEach(btn => {
     btn.classList.add("active");
     mode = btn.dataset.mode;
     placed = {};
-    if (isOneMode()) {
+    blindPlacements = [];
+    if (isOneMode() || isBlindMode()) {
       initOneAtATime();
       setupOneAtATimeDropZones();
       buildOneAtATimeBank();
