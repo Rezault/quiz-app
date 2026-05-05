@@ -1,0 +1,55 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; height: 100vh; padding: 10px; display: flex; flex-direction: column; }
+h1 { text-align: center; margin-bottom: 2px; color: #e94560; font-size: 1.2em; }
+.subtitle { text-align: center; color: #888; margin-bottom: 6px; font-size: 0.75em; }
+.container { max-width: 750px; margin: 0 auto; display: flex; flex-direction: column; height: 100%; width: 100%; }
+.top-bar { flex-shrink: 0; }
+.controls { text-align: center; margin-bottom: 6px; }
+.controls button { background: #e94560; border: none; color: #fff; padding: 4px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8em; margin: 0 4px; }
+.controls button:hover { background: #c73e54; }
+.score { text-align: center; margin-bottom: 6px; font-size: 0.85em; color: #0f3460; background: #e2e2e2; padding: 4px 8px; border-radius: 6px; }
+.mode-toggle { text-align: center; margin-bottom: 6px; }
+.mode-toggle button { background: #16213e; border: 1px solid #e94560; color: #e94560; padding: 3px 10px; border-radius: 6px; cursor: pointer; margin: 0 3px; font-size: 0.75em; }
+.mode-toggle button.active { background: #e94560; color: #fff; }
+
+/* Main content area: pathway left, word bank right */
+.main-content { display: flex; flex: 1; gap: 12px; min-height: 0; overflow: hidden; }
+
+/* Pathway */
+.pathway-wrapper { flex: 1; overflow-y: auto; min-height: 0; }
+.pathway { position: relative; }
+.step { display: flex; align-items: center; margin-bottom: 1px; }
+.step-num { width: 22px; font-weight: bold; color: #e94560; font-size: 0.7em; flex-shrink: 0; }
+.drop-zone { min-width: 160px; min-height: 26px; border: 2px dashed #444; border-radius: 6px; padding: 3px 8px; display: flex; align-items: center; justify-content: center; font-size: 0.72em; transition: all 0.2s; }
+.drop-zone.substrate { border-color: #f5c518; background: rgba(245,197,24,0.05); }
+.drop-zone.enzyme { border-color: #ff6b9d; background: rgba(255,107,157,0.05); }
+.drop-zone.filled { border-style: solid; }
+.drop-zone.correct { border-color: #4caf50; background: rgba(76,175,80,0.15); color: #4caf50; }
+.drop-zone.incorrect { border-color: #f44336; background: rgba(244,67,54,0.15); color: #f44336; }
+.drop-zone.drag-over { transform: scale(1.02); border-width: 3px; }
+.arrow { text-align: center; color: #e94560; font-size: 0.9em; margin: 0 0 0 22px; line-height: 1; }
+.enzyme-label { margin: 0 0 0 22px; }
+.plus { color: #888; margin: 0 4px; font-size: 0.75em; }
+.split-row { display: flex; align-items: center; margin-left: 22px; flex-wrap: wrap; gap: 2px; }
+
+/* Word bank */
+.word-bank { width: 260px; flex-shrink: 0; padding: 10px; background: #16213e; border-radius: 10px; border: 1px solid #333; overflow-y: auto; min-height: 0; }
+.word-bank h3 { margin-bottom: 6px; color: #888; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; }
+.bank-section { margin-bottom: 8px; }
+.bank-section h4 { font-size: 0.65em; color: #f5c518; margin-bottom: 4px; text-transform: uppercase; }
+.bank-section.enzymes h4 { color: #ff6b9d; }
+.words { display: flex; flex-wrap: wrap; gap: 4px; }
+.word { padding: 3px 8px; border-radius: 5px; cursor: grab; font-size: 0.7em; user-select: none; transition: all 0.2s; }
+.word:active { cursor: grabbing; }
+.word.substrate { background: #f5c518; color: #1a1a2e; }
+.word.enzyme { background: #ff6b9d; color: #1a1a2e; }
+.word.placed { opacity: 0.3; pointer-events: none; }
+.word.dragging { opacity: 0.5; transform: scale(0.95); }
+
+/* Responsive: stack on narrow screens */
+@media (max-width: 700px) {
+  .main-content { flex-direction: column; }
+  .word-bank { width: 100%; max-height: 35vh; }
+  .pathway-wrapper { max-height: 55vh; }
+}

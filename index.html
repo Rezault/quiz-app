@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glycolysis - Drag & Drop Quiz</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <h1>🧬 Glycolysis Quiz</h1>
+    <p class="subtitle">Drag each term into the correct box</p>
+    <div class="mode-toggle">
+      <button class="active" data-mode="both">Both</button>
+      <button data-mode="substrates">Substrates Only</button>
+      <button data-mode="enzymes">Enzymes Only</button>
+      <button data-mode="one-both">1×1: Both</button>
+      <button data-mode="one-substrates">1×1: Substrates</button>
+      <button data-mode="one-enzymes">1×1: Enzymes</button>
+    </div>
+    <div class="score" id="score">Drop terms into the boxes below</div>
+    <div class="controls">
+      <button onclick="checkAnswers()">Check Answers</button>
+      <button onclick="resetQuiz()">Reset</button>
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="pathway-wrapper">
+      <div class="pathway" id="pathway"></div>
+    </div>
+    <div class="word-bank" id="wordBank"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
