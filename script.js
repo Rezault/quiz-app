@@ -130,6 +130,7 @@ function initOneAtATime() {
   oneCorrect = 0;
   blindPlacements = [];
   updateOneScore();
+  updateUndoButton();
 }
 
 function buildOneAtATimeBank() {
@@ -241,6 +242,7 @@ function setupOneAtATimeDropZones() {
         blindPlacements.push({ value: val, type: current.type, expectedIndex: current.index, placedKey: key });
         oneIndex++;
         updateOneScore();
+        updateUndoButton();
         buildOneAtATimeBank();
       } else {
         // Instant feedback mode
@@ -277,6 +279,36 @@ function updateOneScore(msg) {
   } else {
     scoreEl.textContent = `✅ ${oneCorrect} correct so far — ${oneIndex + 1} of ${oneQueue.length}`;
   }
+}
+
+function updateUndoButton() {
+  const btn = document.getElementById("undoBtn");
+  if (isBlindMode() && blindPlacements.length > 0) {
+    btn.style.display = "";
+  } else {
+    btn.style.display = "none";
+  }
+}
+
+function undoLast() {
+  if (!isBlindMode() || blindPlacements.length === 0) return;
+
+  // Pop the last placement
+  const last = blindPlacements.pop();
+  delete placed[last.placedKey];
+  oneIndex--;
+
+  // Clear the zone visually
+  const [type, idx] = last.placedKey.split("-");
+  const zone = document.querySelector(`.drop-zone[data-type="${type}"][data-index="${idx}"]`);
+  if (zone) {
+    zone.textContent = "";
+    zone.classList.remove("filled", "correct", "incorrect");
+  }
+
+  updateOneScore();
+  updateUndoButton();
+  buildOneAtATimeBank();
 }
 
 // --- Standard mode functions ---
@@ -385,6 +417,7 @@ function resetQuiz() {
   blindPlacements = [];
   document.querySelectorAll(".word").forEach(w => w.classList.remove("placed"));
   document.getElementById("score").textContent = "Drop terms into the boxes below";
+  updateUndoButton();
   if (isOneMode() || isBlindMode()) {
     initOneAtATime();
     setupOneAtATimeDropZones();
@@ -402,6 +435,7 @@ document.querySelectorAll(".mode-toggle button").forEach(btn => {
     mode = btn.dataset.mode;
     placed = {};
     blindPlacements = [];
+    updateUndoButton();
     if (isOneMode() || isBlindMode()) {
       initOneAtATime();
       setupOneAtATimeDropZones();
